@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useCallback, createContext } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, Space, Pagination, Spin, Tabs } from 'antd';
 import './App.css';
 import MoviesList from './components/MoviesList/MoviesList.jsx';
+import { GenresProvider } from './contexts/GenreContext.jsx';
 import MovieService from './services/MovieService.jsx';
 import RatedMovies from './components/RatedMovies/RatedMovies.jsx';
 import { debounce } from 'lodash';
-
-export const { Provider, Consumer } = React.createContext();
-
-export const GenresContext = createContext([]);
+import { handleInputChange } from './utils';
 
 function App() {
   const [movies, setMovies] = useState([]);
@@ -18,20 +16,14 @@ function App() {
   const [page, setPage] = useState(1);
   const [postPerPage] = useState(20);
   const [searchText, setSearchText] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [genres, setGenres] = useState([]);
-  const [movieRatings, setMovieRatings] = useState({});
-  const [rateMovies, setRatedMovies] = useState([]);
   const [activeTabKey, setActiveTabKey] = useState('tab1');
 
-  
   const fetchMovies = useCallback(async () => {
     try {
       if (!navigator.onLine) {
         throw new Error('No internet connection');
       }
-
       const movieService = new MovieService();
       movieService.getAllMovies().then((res) => {
         setMovies(res);
@@ -70,79 +62,6 @@ function App() {
     initializeGuestSession();
   }, []);
 
-  const [storage, setStorage] = useState([]);
-
-  useEffect(() => {
-    const isStorage = JSON.parse(localStorage.getItem('movies'));
-    if (!isStorage) {
-      localStorage.setItem('movies', JSON.stringify([]));
-    }
-  }, []);
-
-  const rateMovie = async (movieId, rating) => {
-    try {
-      const movieService = new MovieService();
-      const token = movieService.getToken();
-      if (!token) {
-        throw new Error('Guest session token not available');
-      }
-      await movieService.postMovieRating(movieId, rating);
-      setMovieRatings((prevRatings) => ({
-        ...prevRatings,
-        [movieId]: rating,
-      }));
-    } catch (error) {
-      console.error('Error rating movie:', error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchGenres = async () => {
-      try {
-        const movieService = new MovieService();
-        const genresData = await movieService.getGenres();
-        setGenres(genresData);
-     
-      } catch (error) {
-        console.error('Error loading genres:', error);
-      }
-    };
-
-    fetchGenres();
-  }, []);
-
-  const handleInputChange = async (searchText, searchPage = '') => {
-    const movieService = new MovieService();
-    const result = await movieService.getSearchResultMovies(
-      searchText,
-      searchPage
-    );
-    const { total_pages, total_results, page, results } = result;
-    setMovies(results);
-    setTotal(total_pages);
-    setPage(page);
-  };
-
-  const filteredMovies = movies.filter((movie) =>
-    movie?.title?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const indexOfLastPage = page * postPerPage;
-  const indexOfFirstPage = indexOfLastPage - postPerPage;
-  const currentFilteredPosts = filteredMovies.slice(
-    indexOfFirstPage,
-    indexOfLastPage
-  );
-
-  const [ratedMoviesMy, setRatedMoviesMy] = useState([]);
-  function updateRatedFromStore() {
-    const initStore = JSON.parse(localStorage.getItem('movies'));
-    setRatedMoviesMy(initStore);
-  }
-  useEffect(() => {
-    updateRatedFromStore();
-  }, [movies]);
-
   const items = [
     {
       key: 'tab1',
@@ -163,23 +82,21 @@ function App() {
             <>
               <MoviesList
                 loading={loading}
-                onInputChange={handleInputChange}
-                searchTerm={searchTerm}
+                onInputChange={(text) =>
+                  handleInputChange(text, setMovies, setTotal, setPage)
+                }
                 movies={movies}
-                currentFilteredPosts={currentFilteredPosts}
-                genres={genres}
-                rateMovie={rateMovie}
+                page={page}
                 setMovies={setMovies}
-                setRatedMovies={setRatedMovies}
                 activeTabKey={activeTabKey}
-                setStorage={setStorage}
                 setSearchText={setSearchText}
+                postPerPage={postPerPage}
               />
               <Pagination
                 className="custom-pagination"
-                onChange={(value) => {
-                  handleInputChange(searchText, value);
-                }}
+                onChange={(value) =>
+                  handleInputChange(searchText, setMovies, setTotal, setPage)
+                }
                 total={total}
                 current={page}
                 pageSize={postPerPage}
@@ -196,16 +113,18 @@ function App() {
       label: `Rated`,
       children: (
         <>
-          <RatedMovies genres={genres} ratedMoviesMy={ratedMoviesMy} />
+          <RatedMovies />
         </>
       ),
     },
   ];
 
   return (
-    <div className="App">
-      <Tabs centered className="tabs" defaultActiveKey="tab1" items={items} />
-    </div>
+    <GenresProvider>
+      <div className="App">
+        <Tabs centered className="tabs" defaultActiveKey="tab1" items={items} />
+      </div>
+    </GenresProvider>
   );
 }
 

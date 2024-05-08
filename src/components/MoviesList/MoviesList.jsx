@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Flex, Spin, Alert } from 'antd';
 import CardMovie from '../CardMovie/CardMovie.jsx';
-
 import './MoviesList.css';
 import { debounce } from 'lodash';
 
@@ -10,11 +9,9 @@ export default function MoviesList({
   onInputChange,
   rateMovie,
   ratedMovies,
-  genres,
   setMovies,
   setRatedMovies,
   activeTabKey,
-  setStorage,
   movies,
   setSearchText,
 }) {
@@ -60,13 +57,10 @@ export default function MoviesList({
             {movies && movies.length > 0
               ? movies.map((movie, index) => (
                   <CardMovie
-                    key={index}
+                    key={movie.id}
                     movie={movie}
-                    genres={genres}
                     rateMovie={rateMovie}
                     setMovies={setMovies}
-                    setRatedMovies={setRatedMovies}
-                    setStorage={setStorage}
                   />
                 ))
               : activeTabKey === 'tab1' && (
@@ -77,7 +71,7 @@ export default function MoviesList({
             {ratedMovies && ratedMovies.length > 0
               ? ratedMovies.map((movie, index) => (
                   <CardMovie
-                    key={index}
+                    key={movie.id}
                     movie={movie}
                     genres={genres}
                     rateMovie={rateMovie}

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { format } from 'date-fns';
 import './RatedCardMovie.css';
+import { useGenres } from '../../contexts/GenreContext.jsx';
 
 import { Rate } from 'antd';
 
@@ -17,6 +18,8 @@ function shortenText(text, maxLength) {
 }
 
 export default function CardMovie({ movie, genres }) {
+  const [genresGet] = useGenres(); 
+  
   const {
     poster_path,
     original_title,
@@ -25,12 +28,12 @@ export default function CardMovie({ movie, genres }) {
     overview,
     me_average,
   } = movie;
-
+ 
   const formattedDate = format(new Date(release_date), 'dd MMMM yyyy');
   const shortText = shortenText(overview, 140);
 
   const genreNames = movie.genre_ids.map((id) => {
-    const genre = genres.find((genre) => genre.id === id);
+    const genre = genresGet.find((genre) => genre.id === id);
     return (
       <span className="genre-item" key={genre?.id || 0}>
         {genre ? genre.name : ''}

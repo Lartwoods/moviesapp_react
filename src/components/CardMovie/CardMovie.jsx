@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
+import { useGenres } from '../../contexts/GenreContext.jsx';
 import './CardMovie.css';
 
 import { Rate } from 'antd';
@@ -18,11 +19,11 @@ function shortenText(text, maxLength) {
 
 export default function CardMovie({
   movie,
-  genres,
-
   setMovies,
-  setRatedMovies,
 }) {
+  const [genresGet] = useGenres();
+
+  const [rateMovies, setRatedMovies] = useState([]);
   const { poster_path, original_title, release_date, genre_ids, overview } =
     movie;
 
@@ -33,7 +34,7 @@ export default function CardMovie({
   const shortText = shortenText(overview, 140);
 
   const genreNames = movie.genre_ids.map((id) => {
-    const genre = genres.find((genre) => genre.id === id);
+    const genre = genresGet.find((genre) => genre.id === id);
     return (
       <span className="genre-item" key={genre?.id}>
         {genre ? genre.name : ''}
@@ -56,7 +57,7 @@ export default function CardMovie({
   const [rating, setRating] = useState(0);
 
   const handleRateChange = (value) => {
-    const initStore = JSON.parse(localStorage.getItem('movies'));
+    const initStore = JSON.parse(localStorage.getItem('movies')) || [];
     const test = initStore.find((el) => el.id === movie.id);
     if (test) {
       test.me_average = value;

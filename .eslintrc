@@ -3,5 +3,8 @@
     "sourceType": "module",
     "ecmaVersion": 2020,
     "parser": "@babel/eslint-parser"
+  },
+  "rules": {
+    "no-multiple-empty-lines": ["error", { "max": 1 }]
   }
 }
